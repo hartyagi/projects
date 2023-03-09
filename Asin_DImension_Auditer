@@ -1,0 +1,318 @@
+import sys
+from bs4 import BeautifulSoup
+from selenium.webdriver.support.ui import Select
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+import os
+import time
+import pandas as pd
+import getpass
+import tkinter as tk
+from tkinter import filedialog
+import chromedriver_autoinstaller
+import numpy as np
+from selenium.common.exceptions import ElementClickInterceptedException
+
+print('''| ASIN Dimension Audit Tool 2.0 |
+
+      by hartyagi@''')
+
+
+def progress_bar(percent, width=50):
+    '''Print a progress bar to the console.
+
+    :param percent: float between 0 and 1
+    :param width: progress bar width in characters
+    '''
+    sys.stdout.write('\r')
+    sys.stdout.write('[{}] {:.0f}%'.format('#' * int(width * percent), 100 * percent))
+    sys.stdout.flush()
+
+
+################################################################
+# Midway authentication
+##################################################################
+options = webdriver.ChromeOptions()
+user = os.getlogin()
+path = getpass.getuser()
+u = os.path.join("C:/Users/", path, "AppData/Local/Google/Chrome/User Data")
+chromedriver_autoinstaller.install()
+options.add_argument('user-data-dir=\\Users\\' + user + '\\AppData\\Local\\Google\\Chrome\\User Data\\Profile 2')
+options.add_argument("--disable-gpu")
+options.add_argument("--start-maximized")
+
+###################################################################
+### using a dialog box to fetch the input file
+###################################################################
+root = tk.Tk()
+root.withdraw()  # to hide root window
+print('Please Upload the Input file')
+root.filename = filedialog.askopenfilename(initialdir='C:\\Users\\' + user + '\\Desktop',
+                                           title="Select the input file",
+                                           filetypes=(("Excel files", ".xlsx .xls"), ("all files", "'.'")))
+
+input_file = pd.read_excel(root.filename)
+# input_file = pd.read_excel("C:\\Users\\hartyagi\\Desktop\\ADA Test data(Denali).xlsx")
+start_time = time.time()
+print(input_file)
+################################################################
+# formatting  the input file
+##################################################################
+
+print('processing the input file, Please wait')
+
+banned_FCs = pd.read_excel("C:\\Users\\" + user + "\\Desktop\\ADA-Denali\\banned_FCs.xlsx")
+banned_list = banned_FCs["FC"].to_numpy()
+
+print("Banned FC list : ", banned_list)
+
+links_list = []
+mp_links = {'DE': 'https://denali-website-eu.aka.amazon.com/inventory-analysis'
+    , 'FR': 'https://denali-website-eu.aka.amazon.com/inventory-analysis'
+    , 'IT': 'https://denali-website-eu.aka.amazon.com/inventory-analysis'
+    , 'ES': 'https://denali-website-eu.aka.amazon.com/inventory-analysis'
+    , 'UK': 'https://denali-website-eu.aka.amazon.com/inventory-analysis'
+    , 'JP': 'https://denali-website-fe.aka.amazon.com/inventory-analysis'
+    , 'CA': 'https://denali-website-na.aka.amazon.com/inventory-analysis'
+    , 'US': 'https://denali-website-na.aka.amazon.com/inventory-analysis'}
+
+# = pd.read_excel("C:\\Users\\"+user+"\\Desktop\\Denali Automation\\test data.xlsx")
+df = pd.DataFrame(input_file)
+for x in df.index:
+    if df["MP"][x] in mp_links:
+        links_list.append(mp_links[df['MP'][x]])
+# adding a new column[Links] to fetch the correct url based on MP
+df['Links'] = links_list
+
+################################################################
+# interacting with web elements with selenium
+# #################################################################
+# launch the home page of the URL
+driver = webdriver.Chrome(options=options)
+output_asin = []
+output_supply = []
+output_FC = []
+output_SIM = []
+status = "ASIN completed."
+total = df['ASINs'].count()
+
+driver.get('https://urlremoved')   #URL edited out for confedintiality
+
+# midway check
+mid = driver.current_url
+mid1 = str(mid)
+while mid1 != 'https://urlremoved':  #URL edited out for confedintiality
+    time.sleep(3)
+    mid = driver.current_url
+    mid1 = str(mid)
+
+    print("waiting for midway authentication")
+
+print("midway passed")
+
+# driver.set_window_position(-2000,0) #running browser in background as per user request
+
+for x in df.index:
+
+    load = (x / total)
+    url = df["Links"][x]
+    # driver.get(url)
+    print('------------------------------------------------------------')
+    progress_bar(load)
+
+    print('')
+    MP = ['Amazon', df["MP"][x]]
+    MP = (' '.join(MP))
+
+    ASIN = df["ASINs"][x]
+    output_asin.append(ASIN)
+
+    driver.get(
+        f'https://urlremoved?marketplaceID={1}&merchantID={1}&iaid={ASIN}&fnsku={ASIN}&merchantSKU={ASIN}&subview=detailed')   #URL edited out for confedintiality
+    try:
+        WebDriverWait(driver, 15).until(EC.presence_of_element_located((By.XPATH, '//div[@class="table-layout"]')))
+
+        html_doc = driver.page_source
+        soup = BeautifulSoup(html_doc, 'lxml')
+        # print(soup.prettify())
+
+        target_table = soup.find('table', class_="ava-table color-table__table inventory-summary-table__table")
+        table = pd.read_html(str(target_table))[0]
+        print('table located')
+
+        table.columns = table.columns.droplevel()  # dropping the first level of multiindex to simply the table
+
+        table.drop(table.tail(1).index, inplace=True)  # removing the total row
+
+        # verifying data against the predefined rules
+
+        table = table[table['Owner'] == 1]
+        table = table[~table['FC'].isin(banned_list)]
+        table = table[table['Node Type'] == 'FulfillmentCenterNode']
+        table = table.dropna(subset=['InBuilding'])
+
+        table = table.dropna(subset=['NetSupply'])
+
+        try:
+            table.drop(table[table['NetSupply'].str.startswith('(')].index, inplace=True)
+        except:
+            pass
+        table = table.sort_values(by='InBuilding', ascending=False)  # sorting data in descending order
+
+        if table.empty:
+
+            target_fc = np.nan  # FC that satisfies all the rules
+            target_supply = np.nan  # total in-building supply in that FC
+            sim_link = np.nan  # total in-building supply in that FC
+            print("No FC matched the predefined criteria")
+            # print('In Building :', target_supply)
+            # print('Target FC', target_fc)
+            print('ASIN :', ASIN)
+
+        else:
+
+            target_fc = table.iloc[0, 0]  # FC that satisfies all the rules
+            target_supply = table.iloc[0, 4]  # total in-building supply in that FC
+            target_supply = int(target_supply)
+
+            print('In Building :', target_supply)
+            print('Target FC :', target_fc)
+            print('ASIN :', ASIN)
+
+            driver.get(
+                f'https://URLremoved{ASIN}&description====================================%0ATAM%20Associates%20-%20Please%20provide%20the%20information%20below%0A%0ACurrent%20package%20dimension%20and%20unit%20weight:%0AFNSKU:%20{ASIN}%0AIOG:%201%0AIs%20item%20currently%20in%20stock%20(y/n)%20?%20Y%20{target_supply}%20available%0A===================================%0A%0A@ISS:%20Please%20cubiscan%20the%20FNSKU%20above%20and%20provide%20new%20dimensions%20and%20weight&ticket_type=Regular+Ticket&severity=FIVE&category=iss&type=Retail+Request&item=FBA-Cubiscan+Item&building_id={target_fc}&group=ISS-{target_fc}&assignee={target_fc}-Group&vendor_id=1&asin={ASIN}&watchers=hpb-sce@amazon.com')    #URL edited out for confedintiality
+
+            WebDriverWait(driver, 90).until(EC.presence_of_element_located((By.XPATH, '//dd[@class="info-value"]')))
+            try:
+                time.sleep(5)
+                WebDriverWait(driver, 10).until(EC.element_to_be_clickable(
+                    (By.XPATH, '//*[@id="sim-create"]/div/div[3]/div/div/div/div/div[2]/button')))
+
+                submit_button = driver.find_element(By.XPATH,'//*[@id="sim-create"]/div/div[3]/div/div/div/div/div[2]/button').click()
+            except:
+                sim_link = 'CTI error'  # SIM link
+                print('SIM not submitted due to CTI error for : ', ASIN)
+            else:
+
+                time.sleep(3)
+                sim_link = driver.current_url
+
+                print('Submitted SIM for', ASIN)
+    except:
+        try:
+            print('Table not located in first attempt, retrying!')
+
+            driver.get(
+                f'https://URLremoved{1}&merchantID={1}&iaid={ASIN}&fnsku={ASIN}&merchantSKU={ASIN}&subview=detailed') #URL edited out for confedintiality
+
+            WebDriverWait(driver, 15).until(EC.presence_of_element_located((By.XPATH, '//div[@class="table-layout"]')))
+
+            html_doc = driver.page_source
+            soup = BeautifulSoup(html_doc, 'lxml')
+            # print(soup.prettify())
+
+            target_table = soup.find('table', class_="ava-table color-table__table inventory-summary-table__table")
+            table = pd.read_html(str(target_table))[0]
+
+            table.columns = table.columns.droplevel()  # dropping the first level of multiindex to simply the table
+
+            table.drop(table.tail(1).index, inplace=True)  # removing the total row
+
+            # verifying data against the predefined rules
+
+            table = table[table['Owner'] == 1]
+            table = table[~table['FC'].isin(banned_list)]
+            table = table[table['Node Type'] == 'FulfillmentCenterNode']
+            table = table.dropna(subset=['InBuilding'])
+
+            table = table.dropna(subset=['NetSupply'])
+
+            try:
+                table.drop(table[table['NetSupply'].str.startswith('(')].index, inplace=True)
+            except:
+                pass
+
+            table = table.sort_values(by='InBuilding', ascending=False)  # sorting data in descending order
+
+            if table.empty:
+
+                target_fc = np.nan  # FC that satisfies all the rules
+                target_supply = np.nan  # total in-building supply in that FC
+                sim_link = np.nan  # total in-building supply in that FC
+                print("No FC matched the predefined criteria")
+                # print('In Building :', target_supply)
+                # print('Target FC', target_fc)
+                print('ASIN :', ASIN)
+
+            else:
+
+                target_fc = table.iloc[0, 0]  # FC that satisfies all the rules
+                target_supply = table.iloc[0, 4]  # total in-building supply in that FC
+                target_supply = int(target_supply)
+
+                print('In Building :', target_supply)
+                print('Target FC :', target_fc)
+                print('ASIN :', ASIN)
+
+                driver.get(
+                    f'https://URLremoved{ASIN}&description====================================%0ATAM%20Associates%20-%20Please%20provide%20the%20information%20below%0A%0ACurrent%20package%20dimension%20and%20unit%20weight:%0AFNSKU:%20{ASIN}%0AIOG:%201%0AIs%20item%20currently%20in%20stock%20(y/n)%20?%20Y%20{target_supply}%20available%0A===================================%0A%0A@ISS:%20Please%20cubiscan%20the%20FNSKU%20above%20and%20provide%20new%20dimensions%20and%20weight&ticket_type=Regular+Ticket&severity=FIVE&category=iss&type=Retail+Request&item=FBA-Cubiscan+Item&building_id={target_fc}&group=ISS-{target_fc}&assignee={target_fc}-Group&vendor_id=1&asin={ASIN}&watchers=hpb-sce@amazon.com')
+
+                WebDriverWait(driver, 90).until(EC.presence_of_element_located((By.XPATH, '//dd[@class="info-value"]')))
+
+                try:
+                    time.sleep(5)
+                    WebDriverWait(driver, 10).until(EC.element_to_be_clickable(
+                        (By.XPATH, '//*[@id="sim-create"]/div/div[3]/div/div/div/div/div[2]/button')))
+
+                    submit_button = driver.find_element(By.XPATH,'//*[@id="sim-create"]/div/div[3]/div/div/div/div/div[2]/button').click()
+                except:
+                    sim_link = 'CTI error'  # SIM link
+                    print('SIM not submitted due to CTI error for : ', ASIN)
+                else:
+
+                    time.sleep(3)
+                    sim_link = driver.current_url
+
+                    print('Submitted SIM for', ASIN)
+        except:
+            print('unable to locate table')
+            target_fc = "Unable to locate table"  # FC that satisfies all the rules
+            target_supply = "Unable to locate table"  # total in-building supply in that FC
+            sim_link = "Unable to locate table"  # total in-building supply in that FC
+
+    output_supply.append(target_supply)
+    output_FC.append(target_fc)
+    output_SIM.append(sim_link)
+
+print('------------------------------------------------------------')
+progress_bar(1)
+print(' Completed')
+
+# driver.quit()
+###################################################################
+# exporting the final output
+##################################################################
+
+output_dict = {'ASIN': output_asin, 'In-Building Supply': output_supply, 'FC': output_FC, 'SIM LINK': output_SIM}
+output_df = pd.DataFrame(output_dict)
+
+# output_df['In-Building Supply'] = output_df['In-Building Supply'].astype(str).apply(lambda x: x.replace('.0', ''))
+
+print(
+    '''
+    ADA output results
+
+    '''
+    , output_df)
+
+output_df.to_excel("C:\\Users\\" + user + "\\Downloads\\ADA_Output.xlsx", index=False)
+
+##timing the script
+end_time = time.time()
+print('''
+Task Completed,"ADA_Output" file has been exported to your Downloads folder ''')
+
+print('''
+      The script took''', f"{end_time - start_time:.3f}", "seconds to complete")
