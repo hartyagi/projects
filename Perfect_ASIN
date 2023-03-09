@@ -1,0 +1,1007 @@
+import threading
+import time
+import tkinter as tk
+from tkinter import Label
+from tkinter import ttk
+from ttkthemes import ThemedTk
+from tkinter.messagebox import showinfo
+from PIL import Image, ImageTk, ImageSequence
+import os
+
+'''
+________________________________________________________________________________________________________________________
+
+*** Patch notes ***
+
+DATE : 10/10/2022
+patch by : hartyagi
+
+1. [Main fix] Fixed the issue with bullet point not capturing in certain scenarios
+2. Removed the dependency on user to save the logo_image file in their system to run the automation
+3. Removed the dependency on manually downloading/updating the webdriver and saving the file in the dedicated path
+4. speed up the automation
+
+________________________________________________________________________________________________________________________
+'''
+
+user = os.getlogin()
+root = tk.Tk()
+root.title('Perfect ASIN Automation')
+root.geometry("700x400+400+200")
+
+
+# functions
+def loading():
+    global gif
+    gif = Image.open('C:\\Users\\' + user + '\\Pictures\\bgg.png')
+
+    label1 = Label(root, text="Your request is being processed, Please wait", font=1, bg='black', fg='#ff9900')
+    label1.place(relx=0.5, rely=0.9, relwidth=.8, relheight=0.1, anchor='s')
+
+
+def exit():
+    label1 = Label(root, text="Work Hard, Have Fun, Make History", font=2, bg='black', fg='#ff9900')
+    label1.place(relx=0.5, rely=0.9, relwidth=.8, relheight=0.1, anchor='s')
+
+
+def US_KPI():
+    import time
+    import os
+    import pandas as pd
+    import tkinter as tk
+    from tkinter import filedialog
+
+    print('''
+	######################################
+	#  Auto KPI calculator for US CPB    #
+	#  Developed by @hartyagi            #
+	######################################
+	''')
+
+    user = os.getlogin()
+
+    ###################################################################
+    ### using a dialog box to fetch the input file
+    ###################################################################
+    root = tk.Tk()
+    root.withdraw()  # to hide root window
+    root.filename = filedialog.askopenfilename(initialdir='C:\\Users\\' + user + '\\Desktop',
+                                               title="Select the input file",
+                                               filetypes=(("Excel files", ".xlsx .xls"), ("all files", "'.'")))
+    start_time = time.time()
+    data1 = pd.ExcelFile(root.filename)
+    data = pd.read_excel(data1)
+
+    ############################################################
+    # Scoring the ASINs and updating the KPIs using pandas 1.4.2#
+    ############################################################
+
+    # for Item Name
+    for x in data.index:
+        if data.isna().loc[x, "Comment"]:
+            data.loc[x, "Item Name_d"] = '0'
+            data.loc[x, "KPI_Item_name (10%)"] = '10'
+
+
+        else:
+            data.loc[x, "Item Name_d"] = '1'
+            data.loc[x, "KPI_Item_name (10%)"] = '0'
+
+    # for Images
+    for x in data.index:
+        if data.isna().loc[x, "Comment.1"]:
+            data.loc[x, "Image_d"] = '0'
+            data.loc[x, "KPI_Images (10%)"] = '10'
+
+        else:
+            data.loc[x, "Image_d"] = '1'
+            data.loc[x, "KPI_Images (10%)"] = '0'
+
+    # for BrowseNodes
+    for x in data.index:
+        if data.isna().loc[x, "Browse Node"]:
+            data.loc[x, "Browse Node_d"] = '1'
+            data.loc[x, "KPI_Browse_node (10%)"] = '0'
+
+        else:
+            data.loc[x, "Browse Node_d"] = '0'
+            data.loc[x, "KPI_Browse_node (10%)"] = '10'
+
+    # for Buyability
+    for x in data.index:
+        if data.loc[x, "Buyability"] == 'BB Available':
+            data.loc[x, "Buyability_d"] = '0'
+            data.loc[x, "KPI_Buyability (10%)"] = '10'
+
+
+        else:
+            data.loc[x, "Buyability_d"] = '1'
+            data.loc[x, "KPI_Buyability (10%)"] = '0'
+
+    # for Variation_parent
+
+    for x in data.index:
+        if data.isna().loc[x, "Comment.6"]:
+            data.loc[x, "Variation_parent_d"] = '0'
+            data.loc[x, "KPI_Variation_Parent (10%)"] = '10'
+
+
+        else:
+            data.loc[x, "Variation_parent_d"] = '1'
+            data.loc[x, "KPI_Variation_Parent (10%)"] = '0'
+
+    # for Bullet
+    for x in data.index:
+        if data.isna().loc[x, "Comment.3"]:
+            data.loc[x, "Bullet_d"] = '0'
+            data.loc[x, "KPI_Bullet Point (10%)"] = '10'
+
+        else:
+            data.loc[x, "Bullet_d"] = '1'
+            data.loc[x, "KPI_Bullet Point (10%)"] = '0'
+
+    # for KPI_brand
+
+    for x in data.index:
+        if data.isna().loc[x, "Comment.7"]:
+            data.loc[x, "Brand Check_d"] = '0'
+            data.loc[x, "KPI_Brand (7.5%)"] = '7.5'
+
+        else:
+            data.loc[x, "Brand Check_d"] = '1'
+            data.loc[x, "KPI_Brand (7.5%)"] = '0'
+
+    # for A Plus Availability
+    for x in data.index:
+        if data.loc[x, "A Plus Availability"] == 'Aplus Available':
+            data.loc[x, "A Plus availability_d"] = '0'
+            data.loc[x, "KPI_A Plus availability (5%)"] = '5'
+
+
+        else:
+            data.loc[x, "A Plus availability_d"] = '1'
+            data.loc[x, "KPI_A Plus availability (5%)"] = '0'
+
+    # for generic_keyword
+
+    for x in data.index:
+        if data.isna().loc[x, "generic_keyword"]:
+            data.loc[x, "generic_keyword_d"] = '1'
+            data.loc[x, "KPI_generic_keyword (5%)"] = '0'
+
+
+        else:
+            data.loc[x, "generic_keyword_d"] = '0'
+            data.loc[x, "KPI_generic_keyword (5%)"] = '5'
+
+    # for KPI_list price
+
+    for x in data.index:
+        if data.isna().loc[x, "list price"]:
+            data.loc[x, "list price_d"] = '1'
+            data.loc[x, "KPI_list price value (5%)"] = '0'
+
+        else:
+            data.loc[x, "list price_d"] = '0'
+            data.loc[x, "KPI_list price value (5%)"] = '5'
+
+    # for Product Description
+    for x in data.index:
+        if data.isna().loc[x, "Comment.4"]:
+            data.loc[x, "Product Description_d"] = '0'
+            data.loc[x, "KPI_Product_Description (7.50%)"] = '7.5'
+
+        else:
+            data.loc[x, "Product Description_d"] = '1'
+            data.loc[x, "KPI_Product_Description (7.50%)"] = '0'
+
+    # for KPI_Unit Count (2.5%)
+
+    for x in data.index:
+        if data.isna().loc[x, "Comment.8"]:
+            data.loc[x, "Unit Count_d"] = '0'
+            data.loc[x, "KPI_Unit Count (2.5%)"] = '2.5'
+
+        else:
+            data.loc[x, "Unit Count_d"] = '1'
+            data.loc[x, "KPI_Unit Count (2.5%)"] = '0'
+
+    # for KPI_Unit Count Type (2.5%)
+
+    for x in data.index:
+        if data.isna().loc[x, "Comment.9"]:
+            data.loc[x, "Unit Count Type_d"] = '0'
+            data.loc[x, "KPI_Unit Count Type (2.5%)"] = '2.5'
+
+        else:
+            data.loc[x, "Unit Count Type_d"] = '1'
+            data.loc[x, "KPI_Unit Count Type (2.5%)"] = '0'
+
+    # for KPI_Manufacturer_Information (5.0%)
+    for x in data.index:
+        if data.isna().loc[x, "Comment.5"]:
+            data.loc[x, "Manufacturer Information_d"] = '0'
+            data.loc[x, "KPI_Manufacturer_Information (5.0%)"] = '5'
+        else:
+            data.loc[x, "Manufacturer Information_d"] = '1'
+            data.loc[x, "KPI_Manufacturer_Information (5.0%)"] = '0'
+
+    # list of all the KPI columns
+    kpi_list = [
+        'KPI_Item_name (10%)'
+        , 'KPI_Images (10%)'
+        , 'KPI_Browse_node (10%)'
+        , 'KPI_Buyability (10%)'
+        , 'KPI_A Plus availability (5%)'
+        , 'KPI_Bullet Point (10%)'
+        , 'KPI_Manufacturer_Information (5.0%)'
+        , 'KPI_Product_Description (7.50%)'
+        , 'KPI_Variation_Parent (10%)'
+        , 'KPI_Brand (7.5%)'
+        , 'KPI_generic_keyword (5%)'
+        , 'KPI_list price value (5%)'
+        , 'KPI_Unit Count (2.5%)'
+        , 'KPI_Unit Count Type (2.5%)'
+    ]
+
+    defect_list = [
+        'Item Name_d'
+        , 'Image_d'
+        , 'Browse Node_d'
+        , 'Buyability_d'
+        , 'A Plus availability_d'
+        , 'Bullet_d'
+        , 'Manufacturer Information_d'
+        , 'Product Description_d'
+        , 'Variation_parent_d'
+        , 'Brand Check_d'
+        , 'generic_keyword_d'
+        , 'list price_d'
+        , 'Unit Count_d'
+        , 'Unit Count Type_d'
+    ]
+
+    # changing the Dtype to float, so we can do mathematical operations on these columns
+    for kpi in kpi_list:
+        data[kpi_list] = data[kpi_list].astype('float')
+
+    for defect in defect_list:
+        data[defect_list] = data[defect_list].astype('float')
+
+    # adding all the columns and populating the column 'overall PI'
+    data['Overll PI'] = data[kpi_list].sum(axis=1)
+    data['Defects Count'] = data[defect_list].sum(axis=1)
+
+    # for defect count
+
+    # for P-ASIN
+
+    for x in data.index:
+        if data.loc[x, "Overll PI"] == 100:
+            data.loc[x, "P-ASIN"] = 'Perfect'
+
+        else:
+            data.loc[x, "P-ASIN"] = 'Imperfect'
+
+    ##adding % suffix
+
+    for kpi in kpi_list:
+        data[kpi_list] = data[kpi_list].astype('str')
+    data[kpi_list] = data[kpi_list] + ("%")
+    data['Overll PI'] = data['Overll PI'].astype('str')
+    data['Overll PI'] = data['Overll PI'] + ("%")
+
+    # exporting the final data to output sheet
+    data.to_excel('C:\\Users\\' + user + '\\Downloads\\US_KPI_output.xlsx', index=False)
+    ##timing the script
+    end_time = time.time()
+    print('Task Completed, File has been exported in your Downloads folder ')
+
+    print('''
+
+
+	The script took''', f"{end_time - start_time:.3f}", "seconds to complete")
+
+    # Setting up the message box for tkinter
+    tk.messagebox.showinfo(title="Perfect ASIN Automation", message='Task Completed, '
+                                                                    'File has been exported to your Downloads folder. '
+                                                                    'The script took, 'f"{end_time - start_time:.3f} seconds to complete")
+
+
+def EU_KPI():
+    import time
+    import os
+    import pandas as pd
+    import tkinter as tk
+    from tkinter import filedialog
+
+    print('''
+	######################################
+	#  Auto KPI calculator for EU CPB    #
+	#  Developed by @' + user + '            #
+	######################################
+	''')
+
+    user = os.getlogin()
+
+    ###################################################################
+    ### using a dialog box to fetch the input file
+    ###################################################################
+    root = tk.Tk()
+    root.withdraw()  # to hide root window
+    root.filename = filedialog.askopenfilename(initialdir='C:\\Users\\' + user + '\\Desktop',
+                                               title="Select the input file",
+                                               filetypes=(("Excel files", ".xlsx .xls"), ("all files", "'.'")))
+    start_time = time.time()
+    datafile = pd.ExcelFile(root.filename)
+    # datafile = pd.read_excel(data1)
+
+    sheet_name = datafile.sheet_names  # see all sheet names
+    print(sheet_name)
+
+    ############################################################
+    # Scoring the ASINs and updating the KPIs using pandas 1.4.2#
+    ############################################################
+    file_list = []
+    for sheet in sheet_name:
+
+        data = pd.read_excel(datafile, sheet_name=sheet)
+
+        # for Item Name
+        for x in data.index:
+            if data.isna().loc[x, "Comment"]:
+                data.loc[x, "Item Name_d"] = '0'
+                data.loc[x, "KPI_Item_name (10%)"] = '10'
+
+
+            else:
+                data.loc[x, "Item Name_d"] = '1'
+                data.loc[x, "KPI_Item_name (10%)"] = '0'
+
+        # for Images
+        for x in data.index:
+            if data.isna().loc[x, "Comment.1"]:
+                data.loc[x, "Image_d"] = '0'
+                data.loc[x, "KPI_Images (10%)"] = '10'
+
+            else:
+                data.loc[x, "Image_d"] = '1'
+                data.loc[x, "KPI_Images (10%)"] = '0'
+
+        # for BrowseNodes
+        for x in data.index:
+            if data.isna().loc[x, "Browse Node"]:
+                data.loc[x, "Browse Node_d"] = '1'
+                data.loc[x, "KPI_Browse_node (10%)"] = '0'
+
+            else:
+                data.loc[x, "Browse Node_d"] = '0'
+                data.loc[x, "KPI_Browse_node (10%)"] = '10'
+
+        # for Buyability
+        for x in data.index:
+            if data.loc[x, "Buyability"] == 'BB Available':
+                data.loc[x, "Buyability_d"] = '0'
+                data.loc[x, "KPI_Buyability (10%)"] = '10'
+
+
+            else:
+                data.loc[x, "Buyability_d"] = '1'
+                data.loc[x, "KPI_Buyability (10%)"] = '0'
+
+        # for Variation_parent
+
+        for x in data.index:
+            if data.isna().loc[x, "Comment.6"]:
+                data.loc[x, "Variation_parent_d"] = '0'
+                data.loc[x, "KPI_Variation_Parent (10%)"] = '10'
+
+
+            else:
+                data.loc[x, "Variation_parent_d"] = '1'
+                data.loc[x, "KPI_Variation_Parent (10%)"] = '0'
+
+        # for Bullet
+        for x in data.index:
+            if data.isna().loc[x, "Comment.3"]:
+                data.loc[x, "Bullet_d"] = '0'
+                data.loc[x, "KPI_Bullet Point (10%)"] = '10'
+
+            else:
+                data.loc[x, "Bullet_d"] = '1'
+                data.loc[x, "KPI_Bullet Point (10%)"] = '0'
+
+        # for KPI_brand
+
+        for x in data.index:
+            if data.isna().loc[x, "Comment.7"]:
+                data.loc[x, "Brand Check_d"] = '0'
+                data.loc[x, "KPI_Brand (7.5%)"] = '7.5'
+
+            else:
+                data.loc[x, "Brand Check_d"] = '1'
+                data.loc[x, "KPI_Brand (7.5%)"] = '0'
+
+        # for A Plus Availability
+        for x in data.index:
+            if data.loc[x, "A Plus Availability"] == 'Aplus Available':
+                data.loc[x, "A Plus availability_d"] = '0'
+                data.loc[x, "KPI_A Plus availability (5%)"] = '5'
+
+
+            else:
+                data.loc[x, "A Plus availability_d"] = '1'
+                data.loc[x, "KPI_A Plus availability (5%)"] = '0'
+
+        # for generic_keyword
+
+        for x in data.index:
+            if data.isna().loc[x, "generic_keyword"]:
+                data.loc[x, "generic_keyword_d"] = '1'
+                data.loc[x, "KPI_generic_keyword (5%)"] = '0'
+
+
+            else:
+                data.loc[x, "generic_keyword_d"] = '0'
+                data.loc[x, "KPI_generic_keyword (5%)"] = '5'
+
+        # for KPI_list price
+
+        for x in data.index:
+            if data.isna().loc[x, "list price"]:
+                data.loc[x, "list price_d"] = '1'
+                data.loc[x, "KPI_list price value (5%)"] = '0'
+
+            else:
+                data.loc[x, "list price_d"] = '0'
+                data.loc[x, "KPI_list price value (5%)"] = '5'
+
+        # for KPI_list price tax
+
+        for x in data.index:
+            if data.isna().loc[x, "list price value tax"]:
+                data.loc[x, "list price value tax_d"] = '1'
+                data.loc[x, "KPI_list price tax (5%)"] = '0'
+
+            else:
+                data.loc[x, "list price value tax_d"] = '0'
+                data.loc[x, "KPI_list price tax (5%)"] = '5'
+
+        # for Product Description
+        for x in data.index:
+            if data.isna().loc[x, "Comment.4"]:
+                data.loc[x, "Product Description_d"] = '0'
+                data.loc[x, "KPI_Product_Description (5%)"] = '5'
+
+            else:
+                data.loc[x, "Product Description_d"] = '1'
+                data.loc[x, "KPI_Product_Description (5%)"] = '0'
+
+        # for KPI_Unit Count (2.5%)
+
+        for x in data.index:
+            if data.isna().loc[x, "Comment.8"]:
+                data.loc[x, "Unit Count_d"] = '0'
+                data.loc[x, "KPI_Unit Count (2.5%)"] = '2.5'
+
+            else:
+                data.loc[x, "Unit Count_d"] = '1'
+                data.loc[x, "KPI_Unit Count (2.5%)"] = '0'
+
+        # for KPI_Unit Count Type (2.5%)
+
+        for x in data.index:
+            if data.isna().loc[x, "Comment.9"]:
+                data.loc[x, "Unit Count Type_d"] = '0'
+                data.loc[x, "KPI_Unit Count Type (2.5%)"] = '2.5'
+
+            else:
+                data.loc[x, "Unit Count Type_d"] = '1'
+                data.loc[x, "KPI_Unit Count Type (2.5%)"] = '0'
+
+        # for KPI_Manufacturer_Information (5.0%)
+        for x in data.index:
+            if data.isna().loc[x, "Comment.5"]:
+                data.loc[x, "Manufacturer Information_d"] = '0'
+                data.loc[x, "KPI_Manufacturer_Information (2.50%)"] = '2.5'
+            else:
+                data.loc[x, "Manufacturer Information_d"] = '1'
+                data.loc[x, "KPI_Manufacturer_Information (2.50%)"] = '0'
+
+        # list of all the KPI columns
+        kpi_list = [
+            'KPI_Item_name (10%)'
+            , 'KPI_Images (10%)'
+            , 'KPI_Browse_node (10%)'
+            , 'KPI_Buyability (10%)'
+            , 'KPI_A Plus availability (5%)'
+            , 'KPI_Bullet Point (10%)'
+            , 'KPI_Manufacturer_Information (2.50%)'
+            , 'KPI_Product_Description (5%)'
+            , 'KPI_Variation_Parent (10%)'
+            , 'KPI_Brand (7.5%)'
+            , 'KPI_generic_keyword (5%)'
+            , 'KPI_list price value (5%)'
+            , 'KPI_list price tax (5%)'
+            , 'KPI_Unit Count (2.5%)'
+            , 'KPI_Unit Count Type (2.5%)'
+        ]
+
+        defect_list = [
+            'Item Name_d'
+            , 'Image_d'
+            , 'Browse Node_d'
+            , 'Buyability_d'
+            , 'A Plus availability_d'
+            , 'Bullet_d'
+            , 'Manufacturer Information_d'
+            , 'Product Description_d'
+            , 'Variation_parent_d'
+            , 'Brand Check_d'
+            , 'generic_keyword_d'
+            , 'list price_d'
+            , 'Unit Count_d'
+            , 'Unit Count Type_d'
+        ]
+
+        # changing the Dtype to float, so we can do mathematical operations on these columns
+        for kpi in kpi_list:
+            data[kpi_list] = data[kpi_list].astype('float')
+
+        for defect in defect_list:
+            data[defect_list] = data[defect_list].astype('float')
+
+        # adding all the columns and populating the column 'overall PI'
+        data['Overll PI'] = data[kpi_list].sum(axis=1)
+        data['Defects Count'] = data[defect_list].sum(axis=1)
+
+        # for defect count
+
+        # for P-ASIN
+
+        for x in data.index:
+            if data.loc[x, "Overll PI"] == 100:
+                data.loc[x, "P-ASIN"] = 'Perfect'
+
+            else:
+                data.loc[x, "P-ASIN"] = 'Imperfect'
+
+        ##adding % suffix
+
+        for kpi in kpi_list:
+            data[kpi_list] = data[kpi_list].astype('str')
+        data[kpi_list] = data[kpi_list] + ("%")
+        data['Overll PI'] = data['Overll PI'].astype('str')
+        data['Overll PI'] = data['Overll PI'] + ("%")
+
+        ### exporting the final data to output sheet
+
+        data.to_excel('C:\\Users\\' + user + '\\Downloads\\KPI_output_' + sheet + '.xlsx', index=False,
+                      sheet_name=sheet)
+        print(sheet, 'Output file has been processed')
+
+    ###combining all worksheets into one
+
+    df1 = pd.read_excel('C:\\Users\\' + user + '\\Downloads\\KPI_output_ES.xlsx')
+    df2 = pd.read_excel('C:\\Users\\' + user + '\\Downloads\\KPI_output_UK.xlsx')
+    df3 = pd.read_excel('C:\\Users\\' + user + '\\Downloads\\KPI_output_FR.xlsx')
+    df4 = pd.read_excel('C:\\Users\\' + user + '\\Downloads\\KPI_output_IT.xlsx')
+    df5 = pd.read_excel('C:\\Users\\' + user + '\\Downloads\\KPI_output_DE.xlsx')
+
+    with pd.ExcelWriter('C:\\Users\\' + user + '\\Downloads\\EU_KPI_output.xlsx') as writer:
+        df1.to_excel(writer, sheet_name='ES', index=False)
+        df2.to_excel(writer, sheet_name='UK', index=False)
+        df3.to_excel(writer, sheet_name='FR', index=False)
+        df4.to_excel(writer, sheet_name='IT', index=False)
+        df5.to_excel(writer, sheet_name='DE', index=False)
+
+    os.remove('C:\\Users\\' + user + '\\Downloads\\KPI_output_ES.xlsx')
+    os.remove('C:\\Users\\' + user + '\\Downloads\\KPI_output_UK.xlsx')
+    os.remove('C:\\Users\\' + user + '\\Downloads\\KPI_output_FR.xlsx')
+    os.remove('C:\\Users\\' + user + '\\Downloads\\KPI_output_IT.xlsx')
+    os.remove('C:\\Users\\' + user + '\\Downloads\\KPI_output_DE.xlsx')
+
+    ##timing the script
+    end_time = time.time()
+    print('Task Completed, File has been exported in your Downloads folder ')
+
+    print('''
+
+
+	The script took''', f"{end_time - start_time:.3f}", "seconds to complete")
+
+    # Setting up the message box for tkinter
+    tk.messagebox.showinfo(title="Perfect ASIN Automation", message='Task Completed, '
+                                                                    'File has been exported to your Downloads folder. '
+                                                                    'The script took, 'f"{end_time - start_time:.3f} seconds to complete")
+
+
+def DP_SCRAPE():
+    import time
+    import os
+    from selenium import webdriver
+    import pandas as pd
+    from selenium.webdriver.common.by import By
+    # from selenium.webdriver.chrome.service import Service
+    from selenium.webdriver.firefox.service import Service
+    from selenium.webdriver.support.ui import WebDriverWait
+    from selenium.webdriver.support import expected_conditions as EC
+    from bs4 import BeautifulSoup
+    import tkinter as tk
+    from tkinter import filedialog
+    import chromedriver_autoinstaller
+
+    print('''
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    `        DP Scraper        `
+    `_________________________ `
+    `  Developed by @hartyagi  `
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    ''')
+
+    user = os.getlogin()
+
+    ###################################################################
+    ### using a dialog box to fetch the input file
+    ###################################################################
+    root = tk.Tk()
+    root.withdraw()  # to hide root window
+    root.filename = filedialog.askopenfilename(initialdir='C:\\Users\\' + user + '\\Desktop',
+                                               title="Select the input file",
+                                               filetypes=(("Excel files", ".xlsx .xls"), ("all files", "'.'")))
+    start_time = time.time()
+    data = pd.ExcelFile(root.filename)
+    sheet_name = data.sheet_names  # see all sheet names
+    print(sheet_name)
+
+    ###################################################################
+    ### storing all the marketpalce websites in a dictionary and autofetching the MP from sheet name
+    ###################################################################
+    loading()
+    mar_list = {'US': 'https://www.amazon.com', 'IN': 'https://www.amazon.in', 'DE': 'https://www.amazon.de',
+                'UK': 'https://www.amazon.co.uk', 'IT': 'https://www.amazon.it', 'FR': 'https://www.amazon.fr',
+                'ES': 'https://www.amazon.es'}
+
+    for sheet in sheet_name:
+
+        print(' Loading ASINs from sheet:', sheet)
+        url = mar_list[sheet]
+        df = pd.read_excel(data, sheet_name=sheet)
+        asin_list = df["ASIN"].to_numpy()
+        print('total number of ASIN are :', len(asin_list))
+        d = {}
+        fail = []
+
+        chromeOptions = webdriver.ChromeOptions()
+        # options = webdriver.FirefoxOptions
+        chromedriver_autoinstaller.install()
+        # path = Service("C:\drivers\chromedriver.exe")
+        # path = Service("C:\drivers\geckodriver-v0.31.0-win64\geckodriver.exe")
+        browser = webdriver.Chrome(options=chromeOptions)
+        # browser = webdriver.Firefox(service=path)
+
+        #### manual login setup on user request starts
+        browser.get(url)
+        input('''
+    _______________________________________________________________
+    Please Login and Select the relevant address for best results to calculate buyability
+
+    Press 'Enter' when you want the scraping to start! ''')
+
+        for i in asin_list:
+            bread_list = []
+            size_drp = []
+            size_drp1 = []
+            bullet_point = []
+            bulls = []
+
+            r = browser.get(url + '/dp/' + i + '?th=1&psc=1')
+
+            # Getting current URL source code
+            get_source = browser.page_source
+            # Text you want to search
+            search_asin = str(i)
+            # print True if text is present else False
+            print(search_asin in get_source)
+            if search_asin not in get_source:
+                fail.append(i)
+                d[
+                    i] = 'page does not exist', 'page does not exist', 'page does not exist', 'page does not exist', 'page does not exist', 'page does not exist', 'page does not exist', 'page does not exist', 'page does not exist', 'page does not exist', 'page does not exist', 'page does not exist', 'page does not exist', 'page does not exist'
+                print('asin ', i, ' not available in this MK')
+                continue
+            else:
+                # t.sleep(1)
+                pass
+            print(r)
+            html_doc = browser.page_source
+            soup = BeautifulSoup(html_doc, 'lxml')
+            ## Fetching product title using BS4
+            title1 = soup.find(id="productTitle")
+            if title1:
+                title = soup.find(id='productTitle').text.strip()
+            else:
+                title = 'unable to find'
+            print('title', title)
+
+            ## Fetching browse Nodes using BS4
+            breads = soup.find_all(class_='a-link-normal a-color-tertiary')
+            if breads:
+                for bread in breads:
+                    ab = bread.text.strip()
+                    bread_list.append(ab)
+                final_bread_list = ' > '.join(bread_list)
+                print(final_bread_list)
+            else:
+                final_bread_list = 'NA'
+            try:
+                box = browser.find_element(By.XPATH, '//div[@id="centerCol"]')
+            except:
+                pass
+            # finding size chart and size chart link
+            try:
+                size_chart = box.find_element(By.XPATH, './/*[@id="sizeChartV2Data_feature_div"]/span')
+                if size_chart:
+                    size_chart_aval = "Available"
+                    size_chart_link = "Link Available"
+                else:
+                    size_chart_aval = "Not Available"
+                    size_chart_link = "Link Not Available"
+
+                print('Size Chart :', size_chart_aval)
+                print('Size Chart Link :', size_chart_link)
+            except:
+                size_chart_aval = "Not Available"
+                size_chart_link = "Link Not Available"
+
+                print('Size Chart :', size_chart_aval)
+                print('Size Chart Link :', size_chart_link)
+
+            # extracting size dropdown elements
+
+            try:
+                drop_downs_box = browser.find_element(By.ID, "inline-twister-expander-content-size_name")
+                if drop_downs_box:
+                    drop_downs = drop_downs_box.find_elements(By.XPATH,
+                                                              './/*[@id="tp-inline-twister-dim-values-container"]/ul//li//span[@class="a-size-base swatch-title-text-display swatch-title-text"]')
+                    if drop_downs:
+                        for value in drop_downs:
+                            size_drp1.append(value.text)
+                        size_drp1.pop(0)  # excluding the first 'select' value
+                        print(size_drp1)
+
+                else:
+                    size_drp1 = "DropDown unavailable"
+                    print(size_drp1)
+            # drop_downs_button = browser.find_element(By.ID, 'inline-twister-expander-header-size_name').click()
+            except:
+                size_drp1 = "DropDown unavailable"
+                print(size_drp1)
+            # WebDriverWait(browser, 5).until(EC.presence_of_element_located((By.ID, 'inline-twister-expander-header-size_name')))
+
+            # bullet points
+
+            # time.sleep(1)
+            try:
+                # bullets2 = soup.find(class_='a-unordered-list a-vertical a-spacing-none').find_all("li")
+                # bullets1 = soup.find(id='feature-bullets').find(class_='a-unordered-list a-vertical a-spacing-mini').find_all("li")
+                bullets1 = soup.find(id='feature-bullets').find_all("li")
+                # bullets = bullets1 + bullets2
+                bullets = bullets1
+            except:
+                try:
+                    bullets = soup.find(id='feature-bullets').find(
+                        class_='a-unordered-list a-vertical a-spacing-mini').find_all("li")
+                except:
+                    bullets = ''
+            # bullets = soup.find(id='feature-bullets').find(class_='a-unordered-list a-vertical a-spacing-mini').find_all("li")
+            if bullets != '':
+                num_bullet = str(len(bullets))  # fetching number of bullet points
+                for bullet in bullets:
+                    bul_pt = bullet.text.strip()
+                    bull = str(bul_pt).lower()
+                    bullet_point.append(bul_pt)
+                    bulls.append(bull)
+
+                try:
+                    bullet_point.remove('Make sure this fits by entering your model number.')
+                    num_bullet = str(len(bullet_point))
+                except:
+                    pass
+                # print('Buller points :', bullet_point)
+                print('Number of bullet points', num_bullet)
+                bullers = str(bulls)
+
+                ## care instructions check
+                if 'machine wash' in bullers or 'care instructions' in bullers or 'care instruction' in bullers or 'hand wash' in bullers:
+                    print('care instruction present')
+                    c_inst = 'care instruction present'
+                else:
+                    print('no care instruction')
+                    c_inst = 'no care instruction'
+            else:
+                num_bullet = '0'
+                c_inst = 'no care instruction'
+                bullet_point = 'no bullet points'
+            descrption1 = soup.find(id='productDescription')
+            if descrption1:
+                descrption = soup.find(id='productDescription').text.strip()
+            else:
+                descrption = 'Descrption not avialable'
+            print(descrption)
+
+            aplus = soup.find(id='aplus')
+            if aplus:
+                print('Aplus Available')
+                aplus_aval = 'Aplus Available'
+            else:
+                print('Aplus Not Available')
+                aplus_aval = 'Aplus Not Available'
+
+            # finding sizechart title
+
+            try:
+                box.find_element(By.XPATH, './/*[@id="sizeChartV2Data_feature_div"]/span/a/i').click()
+                WebDriverWait(browser, 5).until(
+                    EC.presence_of_element_located((By.CLASS_NAME, "a-popover-header-content")))
+                # t.sleep(2)
+                size_chart_title = browser.find_element(By.CLASS_NAME, "a-popover-header-content").text
+
+                if size_chart_title:
+                    generic_size_chart = size_chart_title
+                else:
+                    generic_size_chart = "Size chart title unavailable"
+
+                print('Size Chart Title :', generic_size_chart)
+
+            except:
+
+                generic_size_chart = "Size chart title unavailable"
+                print('Size Chart Title :', generic_size_chart)
+
+            # finding buyline
+
+            try:
+                buy_line = browser.find_element(By.ID, 'bylineInfo')
+                if buy_line:
+                    B_line = "Buyline Available"
+                else:
+                    B_line = "Buyline Not Available"
+            except:
+                B_line = "Buyline Not Available"
+            print('Buyline :', B_line)
+
+            # finding buybox
+
+            try:
+                buy_line = browser.find_element(By.ID, 'bylineInfo')
+                if buy_line:
+                    B_line = "Buyline Available"
+                else:
+                    B_line = "Buyline Not Available"
+            except:
+                B_line = "Buyline Not Available"
+            print('Buyline :', B_line)
+
+            # checking buybility
+
+            try:
+                BB = (browser.find_element(By.XPATH, '//input[@id="add-to-cart-button"]') or browser.find_element(
+                    By.XPATH, '//input[@id="buy-now-button"]'))
+
+                if BB:
+                    BB_check = "BB Available"
+                else:
+                    BB_check = "BB Not Available"
+            except:
+                BB_check = "BB Not Available"
+            print('BB :', BB_check)
+
+            ## Fetching the number of images on DP
+            browser.implicitly_wait(3)
+            number_images = browser.find_elements(By.XPATH,
+                                                  '//li[(@class="a-spacing-small item imageThumbnail a-declarative") or '
+                                                  '(@class="a-spacing-small item videoThumbnail videoBlockIngress videoBlockDarkIngress a-declarative one-video")or '
+                                                  '(@class="a-spacing-small item videoThumbnail videoBlockIngress videoBlockDarkIngress a-align-top videoImageBlockGridView a-declarative one-video") or '
+                                                  '(@class="a-spacing-small item videoThumbnail a-declarative")  or (@class="a-spacing-small pos-360 item a-declarative")]')
+            if number_images:
+                num_image = len(number_images)
+            else:
+                num_image = 'Not available'
+            print('num_image', num_image)
+
+            ######################################################################################
+            # exporting data frame to an output file
+            ######################################################################################
+
+            d[
+                i] = title, final_bread_list, num_image, size_chart_aval, size_chart_link, size_drp1, generic_size_chart, bullet_point, num_bullet, c_inst, descrption, aplus_aval, B_line, BB_check
+        final_dp = pd.DataFrame(d).transpose().reset_index().rename(
+            columns={'index': 'ASIN', 0: 'Title', 1: 'Browse_node', 2: 'Number of Images', 3: 'Size Chart',
+                     4: 'SizeChart link', 5: 'Size Dropdown', 6: 'Brand Size chart Title ', 7: 'Bullet Point',
+                     8: 'Number of bullet points', 9: 'Care instruction', 10: 'Description', 11: 'A Plus availability',
+                     12: 'BuyLine', 13: 'Buybility'})
+
+        browser.minimize_window()
+
+        ### exporting the final data to output sheet
+        t = time.localtime()
+        current_time = time.strftime("%H_%M_%S", t)
+
+        final_dp.to_excel(
+            'C:\\Users\\' + user + '\\Downloads\\DP_Scrape_output_' + sheet + '_' + current_time + '.xlsx', index=False,
+            sheet_name=sheet)
+
+    print('Output file has been exported to Downloads')
+
+    exit()
+
+    ##timing the script
+    end_time = time.time()
+    print('''
+
+
+    The script took''', f"{end_time - start_time:.3f}", "seconds to complete")
+
+    print('''
+
+    Task Completed ''')
+
+    # Setting up the message box for tkinter
+    tk.messagebox.showinfo(title="Perfect ASIN Automation", message='Task Completed, '
+                                                                    'File has been exported to your Downloads folder. '
+                                                                    'The script took, 'f"{end_time - start_time:.3f} seconds to complete")
+
+
+###########
+# fetching BG Image from web to reduce dependency on user
+###########
+import io
+from PIL import Image, ImageTk
+from urllib.request import urlopen
+
+pic_url = "https://github.com/hartyagi/public/blob/main/bgg.png?raw=true"
+my_page = urlopen(pic_url)
+my_picture = io.BytesIO(my_page.read())
+# use PIL to open image formats like .jpg  .png  .gif  etc.
+pil_img = Image.open(my_picture)
+# convert to an image Tkinter can use
+tk_img = ImageTk.PhotoImage(pil_img)
+
+
+
+# background_image = tk.PhotoImage(file='C:\\Users\\' + user + '\\Pictures\\bgg.png')
+
+background_label = tk.Label(root, image=tk_img, bg='black')
+background_label.place(relwidth=1, relheight=1)
+
+frame = tk.Frame(root, bg='#2F4F4F', bd=3)  # buttons frame
+frame.place(relx=0.5, rely=0.1, relwidth=0.75, relheight=0.1, anchor='n')
+
+frame1 = tk.Frame(root, bg='#2F4F4F', bd=3)
+frame1.place(relx=0.5, rely=0.1, relwidth=0.75, relheight=0.1, anchor='s')  # title frame
+
+label = Label(frame1, text="What can I automate for you today?", font=50, bg='#2F4F4F', fg='orange')
+label.pack()
+
+# progressbar
+# pb = ttk.Progressbar(root,orient='horizontal', mode='indeterminate', length=100)	# progressbar
+# pb.place(relx=0.5, rely=0.9, relwidth=0.20, relheight=0.05, anchor='s')
+
+
+button = tk.Button(frame, text="US KPI", bg='black', fg='orange', command=threading.Thread(target=US_KPI).start, bd=5,
+                   activebackground='cyan', activeforeground='black')
+button.place(relx=0.001, relheight=1, relwidth=0.3)
+
+button1 = tk.Button(frame, text="EU KPI", bg='black', fg='orange', command=threading.Thread(target=EU_KPI).start, bd=5,
+                    activebackground='cyan', activeforeground='black')
+button1.place(relx=0.7, relheight=1, relwidth=0.3)
+
+button2 = tk.Button(frame, text="DP SCRAPE", bg='black', fg='orange', command=threading.Thread(target=DP_SCRAPE).start,
+                    bd=5, activebackground='cyan', activeforeground='black')
+button2.place(relx=0.35, relheight=1, relwidth=0.3)
+label1 = Label(root, text="Work Hard, Have Fun, Make History", font=2, bg='black', fg='#ff9900')
+label1.place(relx=0.5, rely=0.9, relwidth=.5, relheight=0.1, anchor='s')
+
+root.mainloop()
