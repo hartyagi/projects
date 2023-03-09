@@ -1,0 +1,548 @@
+import threading
+from tkinter import Label
+from tkinter.messagebox import showinfo
+import tkinter.font as font
+import os
+import time
+import pandas as pd
+import getpass
+import tkinter as tk
+from tkinter import filedialog
+
+from pandas import ExcelWriter
+
+print('''
+________________________________________________________________________________________________________________________
+Developed by hartyagi@
+________________________________________________________________________________________________________________________
+''')
+
+user = os.getlogin()
+root = tk.Tk()
+root.title('Localization Tool Automation')
+root.geometry("500x500+400+200")
+titleFont = font.Font(family='Amazon Ember Heavy')
+myFont = font.Font(family='Amazon Ember Medium')
+
+
+# functions
+
+
+def upload():
+    print('Localization Upload Automation begins')
+    from selenium.webdriver.support.ui import Select
+    from selenium import webdriver
+    from selenium.webdriver.common.by import By
+    from selenium.webdriver.support.ui import WebDriverWait
+    from selenium.webdriver.support import expected_conditions as EC
+    import os
+    import time
+    import pandas as pd
+    import getpass
+    import tkinter as tk
+    from tkinter import filedialog
+    import chromedriver_autoinstaller
+
+    ##############################################################
+    # Developed by hartyagi@
+
+    # Automation title : Localization Upload
+    #############################################################
+
+    ################################################################
+    # Midway authentication
+    ##################################################################
+    options = webdriver.ChromeOptions()
+    user = os.getlogin()
+    path = getpass.getuser()
+    u = os.path.join("C:/Users/", path, "AppData/Local/Google/Chrome/User Data")
+    chromedriver_autoinstaller.install()
+
+    options.add_argument('user-data-dir=\\Users\\' + user + '\\AppData\\Local\\Google\\Chrome\\User Data\\Profile2')
+    options.add_argument("--disable-gpu")
+    options.add_argument("--start-maximized")
+    options.add_experimental_option("detach", True)
+    options.add_experimental_option('excludeSwitches', ['enable-logging'])  # hiding dev warning in console
+
+    ################################################################
+    # using a dialog box to fetch the input file
+    ################################################################
+    print("Please select the input file to be uploaded")
+
+    root = tk.Tk()
+    root.withdraw()  # to hide root window
+    root.filename = filedialog.askopenfilename(initialdir='C:\\Users\\' + user + '\\Desktop',
+                                               title="Select the input file",
+                                               filetypes=(("Excel files", ".xlsx .xls"), ("all files", "'.'")))
+
+    input_file = pd.read_excel(root.filename)
+    # input_file = pd.read_excel('C:\\Users\\' + user + '\\Desktop\\Localization tool\\inputfile.xlsx')
+    start_time = time.time()
+
+    ###############################################################
+    # formatting  the input file
+    #################################################################
+    try:
+        old_file = 'C:\\Users\\' + user + '\\Downloads\\Localisation_AutomationFiles\\Converted Files'
+
+        # file_list = os.listdir(old_file)
+
+        filelist_d = [f for f in os.listdir(old_file)]
+        print("Removing old files")
+        for f in filelist_d:
+            os.remove(os.path.join(old_file, f))  # removing old files
+    except:
+        pass
+
+    print("Uploading the selected file")
+
+    def format_file(file):
+        asin = file["Target Locale"].tolist()
+        mp = file["Target MP"].iloc[0]
+
+        if "AU" in mp:
+            target = file["Target MP"].iloc[mp.index("AU")]
+
+        file.drop(['Target MP', 'Target Locale'], axis=1, inplace=True)
+        new_header = file.iloc[0]  # grab the first row for the header
+        file = file[1:]  # take the data less the header row
+        file.columns = new_header  # set the header row as the df header
+        save_path = 'C:\\Users\\' + user + '\\Downloads\\Localisation_AutomationFiles\\Converted Files'
+        download_path = 'C:\\Users\\' + user + '\\Downloads\\Localisation_AutomationFiles\\Downloaded Files'
+        from pathlib import Path
+        Path(save_path).mkdir(parents=True, exist_ok=True)
+        Path(download_path).mkdir(parents=True, exist_ok=True)
+        file.to_csv(f"{save_path}\{mp}.txt", index=False)
+
+    input_file.groupby("Target Locale").apply(format_file)
+
+    ##############################################################
+    # interacting with web elements with selenium
+    #############################################################
+
+    save_path = 'C:\\Users\\' + user + '\\Downloads\\Localisation_AutomationFiles\\Converted Files'
+
+    file_list = os.listdir(save_path)
+
+    driver = webdriver.Chrome(options=options)
+    url = 'https://sample_url'   # URL removed to maintain data confidentiality
+    driver.get(url)
+
+    if driver.current_url == url:
+        print('Midway Authentication passed')
+    else:
+        while driver.current_url != url:
+            time.sleep(3)
+            print('waiting for midway authentication')
+        if driver.current_url == 'https://sample_url':   # URL removed to maintain data confidentiality
+
+            print('redirecting to prod zone')
+            driver.get(url)
+        else:
+            pass
+
+    for x in file_list:
+        file = x.split('.')
+        mp_file = file[0]
+        print("uploading file for :", mp_file)
+
+        driver.implicitly_wait(10)
+
+        WebDriverWait(driver, 300).until(EC.presence_of_element_located((By.NAME, 'targetMarketplace')))
+        Select(driver.find_element(By.NAME, 'targetMarketplace')).select_by_visible_text(mp_file)
+        print("targetMarketplace selected")
+
+        WebDriverWait(driver, 300).until(EC.presence_of_element_located((By.NAME, 'dataFetchType')))
+        Select(driver.find_element(By.NAME, 'dataFetchType')).select_by_index(0)
+        print("dataFetchType selected")
+
+        WebDriverWait(driver, 300).until(EC.presence_of_element_located((By.XPATH, '//*[@id="buttonAsinsFile"]')))
+        filebutton = driver.find_element(By.XPATH, '//*[@id="buttonAsinsFile"]').click()
+        print("file section selected")
+
+        WebDriverWait(driver, 300).until(EC.presence_of_element_located((By.XPATH, '//*[@id="inputFile"]')))
+        uploadbutton = driver.find_element(By.XPATH, '//*[@id="inputFile"]').send_keys(f"{save_path}\{x}")
+        print("file uploaded")
+
+        WebDriverWait(driver, 300).until(EC.presence_of_element_located((By.XPATH, '//*[@id="submitButton"]')))
+        submitbutton = driver.find_element(By.XPATH, '//*[@id="submitButton"]').click()
+        print("submitted")
+
+        WebDriverWait(driver, 300).until(EC.element_to_be_clickable((By.XPATH, '//*[@id="newRequestButton"]')))
+        nextbutton = driver.find_element(By.XPATH, '//*[@id="newRequestButton"]').click()
+
+    driver.minimize_window()
+
+    ##timing the script
+    end_time = time.time()
+
+    print('''
+
+    Task was completed successfully in just ''', f"{end_time - start_time:.3f}", "seconds")
+
+
+def download():
+    print('Localization Download Automation begins')
+
+    from selenium import webdriver
+    import os
+    import pandas as pd
+    import chromedriver_autoinstaller
+    import time
+
+    ##############################################################
+    # Developed by hartyagi@
+
+    # Automation title : Localization Download
+    #############################################################
+
+    ##############################################################
+    # Browser Setup
+    #############################################################
+
+    options = webdriver.ChromeOptions()
+    user = os.getlogin()
+    chromedriver_autoinstaller.install()
+    options.add_argument("--disable-gpu")
+    options.add_argument("--headless")
+    prefs = {
+        "download.default_directory": "C:\\Users\\" + user + "\\Downloads\\Localisation_AutomationFiles\\downloaded files"}  # changing the default download directory
+    options.add_experimental_option("prefs", prefs)
+    chromedriver_autoinstaller.install()
+    options.add_experimental_option('excludeSwitches', ['enable-logging'])  # hiding dev warning in console
+
+    ##############################################################
+    # clearing the download directory
+    #############################################################
+
+    start_time = time.time()
+
+    mydir = ('C:\\Users\\' + user + '\\Downloads\\Localisation_AutomationFiles\\Downloaded Files')
+
+    final_file = ('C:\\Users\\' + user + '\\Downloads\\Localisation_AutomationFiles\\output.xlsx')
+
+    filelist_d = [f for f in os.listdir(mydir)]
+
+    for f in filelist_d:
+        os.remove(os.path.join(mydir, f))
+    try:
+        os.remove(final_file)
+    except:
+        pass
+
+    ##############################################################
+    # interacting with outlook to fetch the URL & download all the files
+    #############################################################
+    print("Extracting download links from outlook")
+
+    from win32com.client import Dispatch
+    outlook = Dispatch("Outlook.Application").GetNamespace("MAPI")
+
+    user_email = (user + '@amazon.com')
+
+    root_folder = outlook.Folders[user_email]
+    print(root_folder)
+    inbox_folder = root_folder.Folders['Inbox']
+    print(inbox_folder)
+    localisation_folder = inbox_folder.Folders['localization']
+    print(localisation_folder)
+
+    messages = localisation_folder.items
+
+    bodylist = []
+    for mail in messages:
+        body_content = mail.body
+        bodylist.append(body_content)
+
+    ####### exporting all outlook emails as a text file
+
+    with open("Emailfile.txt", 'w') as output:
+        for row in bodylist:
+            output.write(str(row) + '\n')
+
+    ####### extracting target links from that text file
+
+    import re
+
+    regex_code_to_extract_url = '(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})'
+
+    finalUrlList = []
+    with open("Emailfile.txt") as file:
+        for line in file:
+            urls = re.findall(regex_code_to_extract_url, line)
+            # removing un-necessary URLs
+            urls = [i for i in urls if i != 'https://w.amazon.com/bin/view/Saar/Projects/Tapir/FAQ']
+            urls = [i for i in urls if i != 'https://w.amazon.com/bin/view/Saar/Projects/Tapir/UserGuide']
+            urls = [i for i in urls if
+                    i != 'https://asin-localization-core.aka.amazon.com/#/where-is-my-asin(stage:prod)']
+            finalUrlList.append(urls)
+
+    from pandas import DataFrame
+    df = DataFrame(finalUrlList, columns=['download urls'])
+    df = df[df['download urls'].notna()]  # removing na values from the url df
+    df.reset_index(drop=True, inplace=True)
+
+    driver = webdriver.Chrome(options=options)
+
+    ####downloading all the files
+    print("Downloading all the files")
+
+    for x in df['download urls']:
+        dload = driver.get(x)
+        print('downloaded ', x)
+
+    # deleting the email file from system
+
+    os_list = os.listdir()
+
+    removefile = 'Emailfile.txt'
+    if removefile in os_list:
+        os.remove(removefile)
+        print('Email trace removed successfully')
+
+    print("all files have been downloaded successfully!")
+
+    ###############################################################
+    # combining all the downloaded files exporting final output file
+    ##############################################################
+    time.sleep(10)
+
+    user = os.getlogin()
+
+    path = 'C:\\Users\\' + user + '\\Downloads\\Localisation_AutomationFiles\\downloaded files'
+
+    file_list = os.listdir(path)
+
+    final_df = pd.DataFrame
+
+    frames = [pd.read_excel(f'{path}\{f}', sheet_name=1) for f in file_list]
+    result = pd.concat(frames)
+    result.reset_index(drop=True, inplace=True)
+    print(result)
+
+    result.to_excel('C:\\Users\\' + user + '\\Downloads\\Localisation_AutomationFiles\\output.xlsx', sheet_name='data',
+                    index=False)
+    ###############################################################
+    # Extracting Pedal Exclusion ruleNames
+    ##############################################################
+    import numpy as np
+
+    print('Extracting PEDAL Exclusions ruleName')
+
+    df = pd.read_excel('C:\\Users\\' + user + '\\Downloads\\Localisation_AutomationFiles\\output.xlsx')
+
+    # list of all the detectable rulenames
+
+    rule_names = ['MT_SOURCE_EXCLUDED'
+        , 'ABT_SOURCE_EXCLUDED'
+        , 'ARC_NOT_SUPPORTED'
+        , 'ASIN_YANKED_IN_TARGET'
+        , 'COLOR_EXCL_SOFTLINE'
+        , 'SIZE_EXCL_SOFTLINE'
+        , 'DEPARTMENT_EXCL_SOFTLINE'
+        , 'EU_EXCL_NO_OFFER'
+        , 'EXCL_INDEX_SUPPRESSED'
+        , 'EXCL_NO_OFFER'
+        , 'GL_NOT_SUPPORTED'
+        , 'LOCALIZATION_IN_PROGRESS'
+        , 'MISSING_DATA'
+        , 'ORPHAN_IN_SOURCE'
+        , 'QUARANTINED_FOR_30_DAYS'
+        , 'QUARANTINED_FOREVER'
+        , 'REFURBISHED_EXCL'
+        , 'RP_EXCLUSION_FILTER'
+        , 'SOURCE_NOT_PREFERRED'
+        , 'SUCCESSFULLY_LOCALIZED_BEFORE'
+        , 'EXCL_LOC_OVER_LOC'
+                  ]
+
+    df['ruleName'] = np.nan  # creating a new column[BLANK] for rulenames
+
+    for rule in rule_names:
+        df.loc[df['Context Data'].str.contains(rule), 'ruleName'] = rule  # identifying the rulenames from context data
+
+    df.to_excel('C:\\Users\\' + user + '\\Downloads\\Localisation_AutomationFiles\\output.xlsx', sheet_name='data',
+                index=False)
+
+    print('Processed Successfully')
+    ###############################################################
+    # adding a pivot to the output sheet
+    ##############################################################
+
+    print(
+        '''
+
+Creating Pivot
+
+        '''
+
+    )
+
+    import win32com.client as win32
+    from pathlib import Path
+    import sys
+    from win32com.universal import com_error
+
+    win32c = win32.constants
+
+    file_path = 'C:\\Users\\' + user + '\\Downloads\\Localisation_AutomationFiles'
+    file_name = 'output.xlsx'
+
+    def pivot_table(wb: object, ws1: object, pt_ws: object, ws_name: str, pt_name: str, pt_rows: list, pt_cols: list,
+                    pt_filters: list, pt_fields: list):
+        """
+        wb = workbook1 reference
+        ws1 = worksheet1 that contain the data
+        pt_ws = pivot table worksheet number
+        ws_name = pivot table worksheet name
+        pt_name = name given to pivot table
+        pt_rows, pt_cols, pt_filters, pt_fields: values selected for filling the pivot tables
+        """
+
+        # pivot table location
+        pt_loc = len(pt_filters) + 2
+
+        # grab the pivot table source data
+        pc = wb.PivotCaches().Create(SourceType=win32c.xlDatabase, SourceData=ws1.UsedRange)
+
+        # create the pivot table object
+        pc.CreatePivotTable(TableDestination=f'{ws_name}!R{pt_loc}C1', TableName=pt_name)
+
+        # selecte the pivot table work sheet and location to create the pivot table
+        pt_ws.Select()
+        pt_ws.Cells(pt_loc, 1).Select()
+
+        # Sets the rows, columns and filters of the pivot table
+        for field_list, field_r in ((pt_filters, win32c.xlPageField),
+                                    (pt_cols, win32c.xlColumnField),
+                                    (pt_rows, win32c.xlRowField)):
+            for i, value in enumerate(field_list):
+                pt_ws.PivotTables(pt_name).PivotFields(value).Orientation = field_r
+                pt_ws.PivotTables(pt_name).PivotFields(value).Position = i + 1
+
+        # Sets the Values of the pivot table
+        for field in pt_fields:
+            pt_ws.PivotTables(pt_name).AddDataField(pt_ws.PivotTables(pt_name).PivotFields(field[0]), field[1],
+                                                    field[2]).NumberFormat = field[3]
+
+        # Visiblity True or Valse
+        pt_ws.PivotTables(pt_name).ShowValuesRow = True
+        pt_ws.PivotTables(pt_name).ColumnGrand = True
+
+    def run_excel(f_path: Path, f_name: str, sheet_name: str):
+
+        filename = f_path / f_name
+        # print('FILE NAME :',filename)
+        # create excel object
+        excel = win32.gencache.EnsureDispatch('Excel.Application')
+
+        # excel can be visible or not
+        excel.Visible = True  # False
+
+        # try except for file / path
+        try:
+            wb = excel.Workbooks.Open(filename)
+        except com_error as e:
+            if e.excepinfo[5] == -2146827284:
+                print(f'Failed to open spreadsheet.  Invalid filename or location: {filename}')
+            else:
+                raise e
+            sys.exit(1)
+
+        # set worksheet
+        ws1 = wb.Sheets('data')
+
+        # Setup and call pivot_table
+        ws2_name = 'pivot_table'
+        wb.Sheets.Add().Name = ws2_name
+        ws2 = wb.Sheets(ws2_name)
+
+        # update the pt_name, pt_rows, pt_cols, pt_filters, pt_fields at your preference
+        pt_name = 'Pivot'  # pivot table name, must be a string
+        pt_rows = ['Status']  # rows of pivot table, must be a list
+        pt_cols = ['Target Marketplace']  # columns of pivot table, must be a list
+        pt_filters = ['Segment']  # filter to be applied on pivot table, must be a list
+        # [0]: field name [1]: pivot table column name [3]: calulation method [4]: number format (explain the list item of pt_fields below)
+
+        pt_fields = ['Source ASIN', 'Count of Source ASIN', win32c.xlCount, '0'],  # must be a list of lists
+
+        # calculation method: xlAverage, xlSum, xlCount
+        pivot_table(wb, ws1, ws2, ws2_name, pt_name, pt_rows, pt_cols, pt_filters, pt_fields)
+        wb.Save()  # save the pivot table created
+
+    #    wb.Close(True)
+    #    excel.Quit()
+
+    def main():
+        # sheet name for data
+        sheet_name = 'data'  # update with sheet name from your file
+        # file path
+        f_path = Path(
+            r'C:\\Users\\' + user + '\\Downloads\\Localisation_AutomationFiles\\')  # file in current working directory
+        #   f_path = Path(r'c:\...\Documents')  # file located somewhere else
+        # excel file
+        f_name = 'output.xlsx'  # change to your Excel file name
+
+        # function calls
+        run_excel(f_path, f_name, sheet_name)
+
+    main()
+
+    print("Consolidated output file has been exported to [Downloads\\Localisation_AutomationFiles]")
+
+    ##timing the script
+    end_time = time.time()
+
+    print('''
+
+    Task was completed successfully in just ''', f"{end_time - start_time:.3f}", "seconds")
+
+
+###########
+# fetching BG Image from web to reduce dependency on user
+###########
+import io
+from PIL import Image, ImageTk
+from urllib.request import urlopen
+
+pic_url = "https://github.com/hartyagi/public/blob/main/bgg.png?raw=true"
+my_page = urlopen(pic_url)
+my_picture = io.BytesIO(my_page.read())
+# use PIL to open image formats like .jpg  .png  .gif  etc.
+pil_img = Image.open(my_picture)
+# convert to an image Tkinter can use
+tk_img = ImageTk.PhotoImage(pil_img)
+
+#############
+# TKINTER ROOT
+#############
+# background_image = tk.PhotoImage(file="C:\\Users\\hartyagi\\Downloads\\image.png")
+background_label = tk.Label(root, image=tk_img, bg='black')
+background_label.place(relwidth=1, relheight=1)
+
+frame1 = tk.Frame(root, bg='#304C46', bd=3)
+frame1.place(relx=0.5, rely=0.1, relwidth=1, relheight=0.1, anchor='s')  # title frame
+
+label = Label(frame1, text='''ASIN Localization Tool''', font=900, bg='#304C46', fg='Orange')
+label['font'] = titleFont
+label.pack()
+
+frame = tk.Frame(root, bg='#304C46', bd=3)  # buttons frame
+frame.place(relx=0.5, rely=0.1, relwidth=1, relheight=0.1, anchor='n')
+
+button = tk.Button(frame, text="Upload", bg='black', fg='orange', command=threading.Thread(target=upload).start, bd=5,
+                   activebackground='cyan', activeforeground='black')
+button.place(relx=0.1, relheight=1, relwidth=0.3)
+
+button1 = tk.Button(frame, text="Download", bg='black', fg='orange',command=threading.Thread(target=download).start, bd=5,
+                    activebackground='cyan', activeforeground='black')
+button1.place(relx=0.6, relheight=1, relwidth=0.3)
+
+label1 = Label(root, text="Work Hard, Have Fun, Make History", font=2, bg='black', fg='#ff9900')
+label1.place(relx=0.5, rely=0.9, relwidth=.5, relheight=0.1, anchor='s')
+
+label1 = Label(root, text="Work Hard, Have Fun, Make History", font=1, bg='black', fg='orange')
+label1['font'] = myFont
+label1.place(relx=0.5, rely=0.9, relwidth=1, relheight=0.1, anchor='s')
+
+root.mainloop()
